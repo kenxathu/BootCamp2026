@@ -1,0 +1,284 @@
+services:
+  # -------------------------------------------------------------
+  # pfSense Inter-VLAN Router (10.10.126.2)
+  # -------------------------------------------------------------
+  pfsense-router:
+    build:
+      context: ../templates/router
+      dockerfile: Dockerfile
+    container_name: team26-pfsense
+    hostname: pfsense.team26.arena.local
+    environment:
+      - TEAM_ID=26
+      - PORT=80
+    networks:
+      team_wan:
+        ipv4_address: 10.10.126.2
+      team_vlan20:
+        ipv4_address: 172.16.20.1
+      team_vlan201:
+        ipv4_address: 172.16.201.1
+      team_vlan202:
+        ipv4_address: 172.16.202.1
+      team_vlan203:
+        ipv4_address: 172.16.203.1
+      team_vlan204:
+        ipv4_address: 172.16.204.1
+    restart: unless-stopped
+
+  # -------------------------------------------------------------
+  # ESXi Host / Management (10.10.126.3)
+  # -------------------------------------------------------------
+  esxi-host:
+    build:
+      context: ../templates/esxi-mgmt
+      dockerfile: Dockerfile
+    container_name: team26-esxi
+    hostname: esxi.team26.arena.local
+    environment:
+      - TEAM_ID=26
+    networks:
+      team_wan:
+        ipv4_address: 10.10.126.3
+    restart: unless-stopped
+
+  # -------------------------------------------------------------
+  # VLAN 20: KH (Customer Zone)
+  # -------------------------------------------------------------
+  web-aio:
+    build:
+      context: ../templates/web-aio
+      dockerfile: Dockerfile
+    container_name: team26-web-aio
+    hostname: web-aio.team26.arena.local
+    environment:
+      - TEAM_ID=26
+      - PORT=80
+    networks:
+      team_vlan20:
+        ipv4_address: 172.16.20.101
+    restart: unless-stopped
+
+  vpn:
+    build:
+      context: ../templates/vpn
+      dockerfile: Dockerfile
+    container_name: team26-vpn
+    hostname: vpn.team26.arena.local
+    environment:
+      - TEAM_ID=26
+    networks:
+      team_vlan20:
+        ipv4_address: 172.16.20.102
+    restart: unless-stopped
+
+  dc01:
+    build:
+      context: ../templates/dc-0153
+      dockerfile: Dockerfile
+    container_name: team26-dc01
+    hostname: dc01.team26.arena.local
+    environment:
+      - TEAM_ID=26
+    networks:
+      team_vlan20:
+        ipv4_address: 172.16.20.104
+    restart: unless-stopped
+
+  ws01:
+    build:
+      context: ../templates/workstations
+      dockerfile: Dockerfile.ws01
+    container_name: team26-ws01
+    hostname: ws01.team26.arena.local
+    environment:
+      - TEAM_ID=26
+    networks:
+      team_vlan20:
+        ipv4_address: 172.16.20.105
+    restart: unless-stopped
+
+  ws02:
+    build:
+      context: ../templates/workstations
+      dockerfile: Dockerfile.ws02
+    container_name: team26-ws02
+    hostname: ws02.team26.arena.local
+    environment:
+      - TEAM_ID=26
+    networks:
+      team_vlan20:
+        ipv4_address: 172.16.20.106
+    restart: unless-stopped
+
+  # -------------------------------------------------------------
+  # VLAN 201: SCB_VLAN201 (Edge & Source Control)
+  # -------------------------------------------------------------
+  edge-proxy:
+    build:
+      context: ../templates/edge-proxy
+      dockerfile: Dockerfile
+    container_name: team26-edge-proxy
+    hostname: edge-proxy.team26.arena.local
+    environment:
+      - TEAM_ID=26
+    networks:
+      team_vlan201:
+        ipv4_address: 172.16.201.102
+    restart: unless-stopped
+
+  gitea:
+    build:
+      context: ../templates/supplychain/gitea
+      dockerfile: Dockerfile
+    container_name: team26-gitea
+    hostname: gitea.team26.arena.local
+    environment:
+      - TEAM_ID=26
+    networks:
+      team_vlan201:
+        ipv4_address: 172.16.201.103
+    restart: unless-stopped
+
+  ci-runner:
+    build:
+      context: ../templates/supplychain/ci-runner
+      dockerfile: Dockerfile
+    container_name: team26-ci-runner
+    environment:
+      - TEAM_ID=26
+    networks:
+      team_vlan201:
+        ipv4_address: 172.16.201.104
+    restart: unless-stopped
+
+  # -------------------------------------------------------------
+  # VLAN 202: SCB_VLAN202 (CI/CD Chain & K8s)
+  # -------------------------------------------------------------
+  jenkins:
+    build:
+      context: ../templates/supplychain/jenkins
+      dockerfile: Dockerfile
+    container_name: team26-jenkins
+    hostname: jenkins.team26.arena.local
+    environment:
+      - TEAM_ID=26
+    networks:
+      team_vlan202:
+        ipv4_address: 172.16.202.105
+    restart: unless-stopped
+
+  k3s-argocd:
+    build:
+      context: ../templates/k8s-argocd
+      dockerfile: Dockerfile
+    container_name: team26-k3s-argocd
+    hostname: k3s-argocd.team26.arena.local
+    environment:
+      - TEAM_ID=26
+    networks:
+      team_vlan202:
+        ipv4_address: 172.16.202.106
+    restart: unless-stopped
+
+  npm-registry:
+    build:
+      context: ../templates/supplychain/verdaccio
+      dockerfile: Dockerfile
+    container_name: team26-npm-registry
+    hostname: npm-registry.team26.arena.local
+    environment:
+      - TEAM_ID=26
+    networks:
+      team_vlan202:
+        ipv4_address: 172.16.202.107
+    restart: unless-stopped
+
+  # -------------------------------------------------------------
+  # VLAN 203: SCB_VLAN203 (Ops & DNS)
+  # -------------------------------------------------------------
+  dns-ops:
+    build:
+      context: ../templates/ops/dns-ops
+      dockerfile: Dockerfile
+    container_name: team26-dns-ops
+    hostname: dns-ops.team26.arena.local
+    environment:
+      - TEAM_ID=26
+    networks:
+      team_vlan203:
+        ipv4_address: 172.16.203.109
+    restart: unless-stopped
+
+  app-runner:
+    build:
+      context: ../templates/ops/app-runner
+      dockerfile: Dockerfile
+    container_name: team26-app-runner
+    hostname: app-runner.team26.arena.local
+    environment:
+      - TEAM_ID=26
+    networks:
+      team_vlan203:
+        ipv4_address: 172.16.203.110
+    restart: unless-stopped
+
+  # -------------------------------------------------------------
+  # VLAN 204: AdminPrivate (Team Laptops / Jumpbox)
+  # -------------------------------------------------------------
+  jumpbox:
+    build:
+      context: ../templates/jumpbox
+      dockerfile: Dockerfile
+    container_name: team26-jumpbox
+    hostname: jumpbox.team26.arena.local
+    environment:
+      - TEAM_ID=26
+    networks:
+      team_vlan204:
+        ipv4_address: 172.16.204.100
+    restart: unless-stopped
+
+networks:
+  team_wan:
+    name: arena_team26_wan
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.10.126.0/24
+          gateway: 10.10.126.1
+  team_vlan20:
+    name: arena_team26_vlan20
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.20.0/24
+          gateway: 172.16.20.1
+  team_vlan201:
+    name: arena_team26_vlan201
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.201.0/24
+          gateway: 172.16.201.1
+  team_vlan202:
+    name: arena_team26_vlan202
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.202.0/24
+          gateway: 172.16.202.1
+  team_vlan203:
+    name: arena_team26_vlan203
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.203.0/24
+          gateway: 172.16.203.1
+  team_vlan204:
+    name: arena_team26_vlan204
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.204.0/24
+          gateway: 172.16.204.1

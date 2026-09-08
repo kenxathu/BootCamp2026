@@ -1,0 +1,14 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY agent.py /app/agent.py
+
+ENV WS_NAME=WS-02
+ENV WS_AGENT_PORT=4482
+ENV WINRM_PORT=5986
+ENV RDP_PORT=3390
+
+EXPOSE 4482 5986 3390
+
+CMD ["python3", "agent.py"]

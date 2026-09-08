@@ -1,0 +1,94 @@
+{
+  "competition": {
+    "name": "Arena Information Security Cyber Range 2026",
+    "total_teams": 27,
+    "subnet_pattern": "10.10.1{team_id:02d}.0/24"
+  },
+  "scoring": {
+    "service_recovery_points": {
+      "server_k8s": 1000,
+      "server": 500,
+      "workstation": 100
+    },
+    "compromise_points": {
+      "esxi_vcenter": 1000,
+      "server": 500,
+      "appliance": 300,
+      "workstation": 100
+    },
+    "rules": {
+      "stealth_rule": "Khi chiếm được server/máy trạm của đối phương mà không vô hiệu hoá dịch vụ thì đội quản trị server không bị trừ điểm.",
+      "sla_deduction_policy": "Dịch vụ giám sát dừng khi BTC kiểm tra ngẫu nhiên (1-10 phút) sẽ bị trừ điểm tương ứng hạng mục."
+    }
+  },
+  "sla_monitor": {
+    "check_interval_seconds": {
+      "min": 60,
+      "max": 600,
+      "fast_demo_min": 5,
+      "fast_demo_max": 20
+    },
+    "targets": [
+      {
+        "category": "Supply Chain",
+        "node": "jenkins",
+        "vlan": "SCB_VLAN202",
+        "ip_suffix": "172.16.202.105",
+        "ports": [8000, 8080],
+        "type": "server",
+        "points_recovery": 500,
+        "points_compromise": 500
+      },
+      {
+        "category": "DC-0153",
+        "node": "dc01",
+        "vlan": "KH",
+        "ip_suffix": "172.16.20.104",
+        "ports": [88, 135, 389, 445, 636, 8081, 50000, 50050, 50100],
+        "type": "server",
+        "points_recovery": 500,
+        "points_compromise": 500
+      },
+      {
+        "category": "WS-01",
+        "node": "ws01",
+        "vlan": "KH",
+        "ip_suffix": "172.16.20.105",
+        "ports": [4481, 5985, 3389],
+        "type": "workstation",
+        "points_recovery": 100,
+        "points_compromise": 100
+      },
+      {
+        "category": "WS-02",
+        "node": "ws02",
+        "vlan": "KH",
+        "ip_suffix": "172.16.20.106",
+        "ports": [4482, 5986, 3390],
+        "type": "workstation",
+        "points_recovery": 100,
+        "points_compromise": 100
+      },
+      {
+        "category": "VPN",
+        "node": "vpn",
+        "vlan": "KH",
+        "ip_suffix": "172.16.20.102",
+        "ports": [22, 443],
+        "type": "appliance",
+        "points_recovery": 300,
+        "points_compromise": 300
+      },
+      {
+        "category": "Management",
+        "node": "esxi-host",
+        "vlan": "WAN",
+        "ip_suffix": "10.10.1{team_id:02d}.3",
+        "ports": [2301, 2302, 2303, 2322],
+        "type": "esxi_vcenter",
+        "points_recovery": 1000,
+        "points_compromise": 1000
+      }
+    ]
+  }
+}

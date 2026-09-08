@@ -1,0 +1,284 @@
+services:
+  # -------------------------------------------------------------
+  # pfSense Inter-VLAN Router (10.10.1{{ team_id }}.2)
+  # -------------------------------------------------------------
+  pfsense-router:
+    build:
+      context: ../templates/router
+      dockerfile: Dockerfile
+    container_name: team{{ team_id }}-pfsense
+    hostname: pfsense.team{{ team_id }}.arena.local
+    environment:
+      - TEAM_ID={{ team_id }}
+      - PORT=80
+    networks:
+      team_wan:
+        ipv4_address: 10.10.1{{ team_id }}.2
+      team_vlan20:
+        ipv4_address: {{ vlan20_prefix }}.1
+      team_vlan201:
+        ipv4_address: {{ vlan201_prefix }}.1
+      team_vlan202:
+        ipv4_address: {{ vlan202_prefix }}.1
+      team_vlan203:
+        ipv4_address: {{ vlan203_prefix }}.1
+      team_vlan204:
+        ipv4_address: {{ vlan204_prefix }}.1
+    restart: unless-stopped
+
+  # -------------------------------------------------------------
+  # ESXi Host / Management (10.10.1{{ team_id }}.3)
+  # -------------------------------------------------------------
+  esxi-host:
+    build:
+      context: ../templates/esxi-mgmt
+      dockerfile: Dockerfile
+    container_name: team{{ team_id }}-esxi
+    hostname: esxi.team{{ team_id }}.arena.local
+    environment:
+      - TEAM_ID={{ team_id }}
+    networks:
+      team_wan:
+        ipv4_address: 10.10.1{{ team_id }}.3
+    restart: unless-stopped
+
+  # -------------------------------------------------------------
+  # VLAN 20: KH (Customer Zone)
+  # -------------------------------------------------------------
+  web-aio:
+    build:
+      context: ../templates/web-aio
+      dockerfile: Dockerfile
+    container_name: team{{ team_id }}-web-aio
+    hostname: web-aio.team{{ team_id }}.arena.local
+    environment:
+      - TEAM_ID={{ team_id }}
+      - PORT=80
+    networks:
+      team_vlan20:
+        ipv4_address: {{ vlan20_prefix }}.101
+    restart: unless-stopped
+
+  vpn:
+    build:
+      context: ../templates/vpn
+      dockerfile: Dockerfile
+    container_name: team{{ team_id }}-vpn
+    hostname: vpn.team{{ team_id }}.arena.local
+    environment:
+      - TEAM_ID={{ team_id }}
+    networks:
+      team_vlan20:
+        ipv4_address: {{ vlan20_prefix }}.102
+    restart: unless-stopped
+
+  dc01:
+    build:
+      context: ../templates/dc-0153
+      dockerfile: Dockerfile
+    container_name: team{{ team_id }}-dc01
+    hostname: dc01.team{{ team_id }}.arena.local
+    environment:
+      - TEAM_ID={{ team_id }}
+    networks:
+      team_vlan20:
+        ipv4_address: {{ vlan20_prefix }}.104
+    restart: unless-stopped
+
+  ws01:
+    build:
+      context: ../templates/workstations
+      dockerfile: Dockerfile.ws01
+    container_name: team{{ team_id }}-ws01
+    hostname: ws01.team{{ team_id }}.arena.local
+    environment:
+      - TEAM_ID={{ team_id }}
+    networks:
+      team_vlan20:
+        ipv4_address: {{ vlan20_prefix }}.105
+    restart: unless-stopped
+
+  ws02:
+    build:
+      context: ../templates/workstations
+      dockerfile: Dockerfile.ws02
+    container_name: team{{ team_id }}-ws02
+    hostname: ws02.team{{ team_id }}.arena.local
+    environment:
+      - TEAM_ID={{ team_id }}
+    networks:
+      team_vlan20:
+        ipv4_address: {{ vlan20_prefix }}.106
+    restart: unless-stopped
+
+  # -------------------------------------------------------------
+  # VLAN 201: SCB_VLAN201 (Edge & Source Control)
+  # -------------------------------------------------------------
+  edge-proxy:
+    build:
+      context: ../templates/edge-proxy
+      dockerfile: Dockerfile
+    container_name: team{{ team_id }}-edge-proxy
+    hostname: edge-proxy.team{{ team_id }}.arena.local
+    environment:
+      - TEAM_ID={{ team_id }}
+    networks:
+      team_vlan201:
+        ipv4_address: {{ vlan201_prefix }}.102
+    restart: unless-stopped
+
+  gitea:
+    build:
+      context: ../templates/supplychain/gitea
+      dockerfile: Dockerfile
+    container_name: team{{ team_id }}-gitea
+    hostname: gitea.team{{ team_id }}.arena.local
+    environment:
+      - TEAM_ID={{ team_id }}
+    networks:
+      team_vlan201:
+        ipv4_address: {{ vlan201_prefix }}.103
+    restart: unless-stopped
+
+  ci-runner:
+    build:
+      context: ../templates/supplychain/ci-runner
+      dockerfile: Dockerfile
+    container_name: team{{ team_id }}-ci-runner
+    environment:
+      - TEAM_ID={{ team_id }}
+    networks:
+      team_vlan201:
+        ipv4_address: {{ vlan201_prefix }}.104
+    restart: unless-stopped
+
+  # -------------------------------------------------------------
+  # VLAN 202: SCB_VLAN202 (CI/CD Chain & K8s)
+  # -------------------------------------------------------------
+  jenkins:
+    build:
+      context: ../templates/supplychain/jenkins
+      dockerfile: Dockerfile
+    container_name: team{{ team_id }}-jenkins
+    hostname: jenkins.team{{ team_id }}.arena.local
+    environment:
+      - TEAM_ID={{ team_id }}
+    networks:
+      team_vlan202:
+        ipv4_address: {{ vlan202_prefix }}.105
+    restart: unless-stopped
+
+  k3s-argocd:
+    build:
+      context: ../templates/k8s-argocd
+      dockerfile: Dockerfile
+    container_name: team{{ team_id }}-k3s-argocd
+    hostname: k3s-argocd.team{{ team_id }}.arena.local
+    environment:
+      - TEAM_ID={{ team_id }}
+    networks:
+      team_vlan202:
+        ipv4_address: {{ vlan202_prefix }}.106
+    restart: unless-stopped
+
+  npm-registry:
+    build:
+      context: ../templates/supplychain/verdaccio
+      dockerfile: Dockerfile
+    container_name: team{{ team_id }}-npm-registry
+    hostname: npm-registry.team{{ team_id }}.arena.local
+    environment:
+      - TEAM_ID={{ team_id }}
+    networks:
+      team_vlan202:
+        ipv4_address: {{ vlan202_prefix }}.107
+    restart: unless-stopped
+
+  # -------------------------------------------------------------
+  # VLAN 203: SCB_VLAN203 (Ops & DNS)
+  # -------------------------------------------------------------
+  dns-ops:
+    build:
+      context: ../templates/ops/dns-ops
+      dockerfile: Dockerfile
+    container_name: team{{ team_id }}-dns-ops
+    hostname: dns-ops.team{{ team_id }}.arena.local
+    environment:
+      - TEAM_ID={{ team_id }}
+    networks:
+      team_vlan203:
+        ipv4_address: {{ vlan203_prefix }}.109
+    restart: unless-stopped
+
+  app-runner:
+    build:
+      context: ../templates/ops/app-runner
+      dockerfile: Dockerfile
+    container_name: team{{ team_id }}-app-runner
+    hostname: app-runner.team{{ team_id }}.arena.local
+    environment:
+      - TEAM_ID={{ team_id }}
+    networks:
+      team_vlan203:
+        ipv4_address: {{ vlan203_prefix }}.110
+    restart: unless-stopped
+
+  # -------------------------------------------------------------
+  # VLAN 204: AdminPrivate (Team Laptops / Jumpbox)
+  # -------------------------------------------------------------
+  jumpbox:
+    build:
+      context: ../templates/jumpbox
+      dockerfile: Dockerfile
+    container_name: team{{ team_id }}-jumpbox
+    hostname: jumpbox.team{{ team_id }}.arena.local
+    environment:
+      - TEAM_ID={{ team_id }}
+    networks:
+      team_vlan204:
+        ipv4_address: {{ vlan204_prefix }}.100
+    restart: unless-stopped
+
+networks:
+  team_wan:
+    name: arena_team{{ team_id }}_wan
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.10.1{{ team_id }}.0/24
+          gateway: 10.10.1{{ team_id }}.1
+  team_vlan20:
+    name: arena_team{{ team_id }}_vlan20
+    ipam:
+      driver: default
+      config:
+        - subnet: {{ vlan20_prefix }}.0/24
+          gateway: {{ vlan20_prefix }}.1
+  team_vlan201:
+    name: arena_team{{ team_id }}_vlan201
+    ipam:
+      driver: default
+      config:
+        - subnet: {{ vlan201_prefix }}.0/24
+          gateway: {{ vlan201_prefix }}.1
+  team_vlan202:
+    name: arena_team{{ team_id }}_vlan202
+    ipam:
+      driver: default
+      config:
+        - subnet: {{ vlan202_prefix }}.0/24
+          gateway: {{ vlan202_prefix }}.1
+  team_vlan203:
+    name: arena_team{{ team_id }}_vlan203
+    ipam:
+      driver: default
+      config:
+        - subnet: {{ vlan203_prefix }}.0/24
+          gateway: {{ vlan203_prefix }}.1
+  team_vlan204:
+    name: arena_team{{ team_id }}_vlan204
+    ipam:
+      driver: default
+      config:
+        - subnet: {{ vlan204_prefix }}.0/24
+          gateway: {{ vlan204_prefix }}.1

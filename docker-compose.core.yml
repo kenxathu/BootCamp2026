@@ -1,0 +1,54 @@
+services:
+  ctfd:
+    build:
+      context: .
+      dockerfile: core/ctfd/Dockerfile
+    container_name: btc-ctfd
+    environment:
+      - PORT=8000
+      - SLA_CHECKER_URL=http://sla-checker:8080
+    ports:
+      - "8000:8000"
+    networks:
+      btc_net:
+        ipv4_address: 10.10.0.10
+    restart: unless-stopped
+
+  siem:
+    build:
+      context: core/siem
+      dockerfile: Dockerfile
+    container_name: btc-siem
+    ports:
+      - "5601:5601"
+      - "514:514/udp"
+    networks:
+      btc_net:
+        ipv4_address: 10.10.0.8
+    restart: unless-stopped
+
+  sla-checker:
+    build:
+      context: core/sla-checker
+      dockerfile: Dockerfile
+    container_name: btc-sla-checker
+    environment:
+      - PORT=8080
+      - TOTAL_TEAMS=27
+      - SLA_MIN_INTERVAL=10
+      - SLA_MAX_INTERVAL=30
+    ports:
+      - "8081:8080"
+    networks:
+      btc_net:
+        ipv4_address: 10.10.0.15
+    restart: unless-stopped
+
+networks:
+  btc_net:
+    name: arena_btc_net
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.10.0.0/24
+          gateway: 10.10.0.1

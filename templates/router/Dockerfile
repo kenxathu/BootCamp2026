@@ -13,7 +13,7 @@ WORKDIR /app
 
 COPY app.py /app/app.py
 COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
+RUN sed -i 's/\r$//' /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
 EXPOSE 80 443
 

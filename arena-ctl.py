@@ -35,7 +35,7 @@ def generate_flag(team_id: int, target: str) -> str:
     sig = hashlib.sha256(raw).hexdigest()[:12]
     return f"FLAG{{{target}_Team{team_id:02d}_{sig}}}"
 
-def render_team_compose(team_id: int, mode: str = "exact") -> Path:
+def render_team_compose(team_id: int, mode: str = "multi") -> Path:
     """Renders the docker-compose file for a given team."""
     ensure_dirs()
     template_file = TEMPLATES_DIR / "team-compose.template.yml"
@@ -44,7 +44,7 @@ def render_team_compose(team_id: int, mode: str = "exact") -> Path:
 
     tid_str = f"{team_id:02d}"
     
-    # In exact mode, each team has exact IPs from spec
+    # In exact mode, single team isolated lab
     if mode == "exact":
         vlan20 = "172.16.20"
         vlan201 = "172.16.201"
@@ -53,11 +53,13 @@ def render_team_compose(team_id: int, mode: str = "exact") -> Path:
         vlan204 = "172.16.204"
     else:
         # Multi-team co-hosting on single bridge engine without namespaces
-        vlan20 = f"172.{16 + team_id}.20"
-        vlan201 = f"172.{16 + team_id}.201"
-        vlan202 = f"172.{16 + team_id}.202"
-        vlan203 = f"172.{16 + team_id}.203"
-        vlan204 = f"172.{16 + team_id}.204"
+        # Uses 172.(20+team_id).X to avoid docker0 (172.17.0.0/16) and prevent collisions across teams
+        vlan_base = 20 + team_id
+        vlan20 = f"172.{vlan_base}.20"
+        vlan201 = f"172.{vlan_base}.201"
+        vlan202 = f"172.{vlan_base}.202"
+        vlan203 = f"172.{vlan_base}.203"
+        vlan204 = f"172.{vlan_base}.204"
 
     rendered = content.replace("{{ team_id }}", tid_str)
     rendered = rendered.replace("{{ vlan20_prefix }}", vlan20)
@@ -309,7 +311,7 @@ def main():
     # spawn-teams
     p_spawn = subparsers.add_parser("spawn-teams", help="Generate Docker Compose files for teams")
     p_spawn.add_argument("--count", type=int, default=5, help="Number of teams (default 5)")
-    p_spawn.add_argument("--mode", choices=["exact", "multi"], default="exact", help="IP allocation mode")
+    p_spawn.add_argument("--mode", choices=["exact", "multi"], default="multi", help="IP allocation mode (default: multi)")
     p_spawn.set_defaults(func=cmd_spawn_teams)
 
     # generate-flags

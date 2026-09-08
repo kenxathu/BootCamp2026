@@ -36,3 +36,4 @@ if __name__ == "__main__":
     httpd = HTTPServer(("0.0.0.0", 4873), VerdaccioHandler)
     print(f"[Verdaccio-Team{TEAM_ID}] NPM registry running on port 4873")
     httpd.serve_forever()
+

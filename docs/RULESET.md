@@ -49,3 +49,4 @@ BTC kiểm tra tự động và **ngẫu nhiên trong khoảng thời gian từ 
 | **WS-02** | `4482, 5986, 3390` | WS-02 | KH VLAN 20 (`172.16.20.106`) |
 | **VPN** | `22, 443` | VPN Gateway | KH VLAN 20 (`172.16.20.102`) |
 | **Management** | `2301, 2302, 2303, 2322` | ESXi Host | WAN (`10.10.1XX.3`) |
+

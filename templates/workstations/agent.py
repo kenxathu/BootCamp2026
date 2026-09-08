@@ -85,3 +85,4 @@ if __name__ == "__main__":
     httpd = HTTPServer(("0.0.0.0", WS_AGENT_PORT), AgentWebHandler)
     print(f"[{WS_NAME}] Workstation Agent running on port {WS_AGENT_PORT}")
     httpd.serve_forever()
+

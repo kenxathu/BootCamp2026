@@ -96,3 +96,4 @@ graph TD
    * Nộp Flag: Thí sinh gửi request về `CTFd 10.10.0.10:8000`.
    * SLA Monitoring: `SLA Engine 10.10.0.15` chủ động bắn các gói kiểm tra TCP/HTTP định kỳ ngẫu nhiên (1–10 phút) vào các cổng dịch vụ của 27 đội.
    * Thu thập Log: Toàn bộ pfSense và node gửi Syslog về `SIEM 10.10.0.8:514`.
+

@@ -15,3 +15,4 @@ iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE 2>/dev/null || true
 
 # Start pfSense Dashboard web application
 exec python3 /app/app.py
+

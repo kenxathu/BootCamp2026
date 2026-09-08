@@ -44,3 +44,4 @@ if __name__ == "__main__":
     httpd = HTTPServer(("0.0.0.0", 80), ProxyHandler)
     print(f"[EDGE-Proxy-Team{TEAM_ID}] Listening on port 80")
     httpd.serve_forever()
+

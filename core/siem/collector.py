@@ -90,3 +90,4 @@ if __name__ == "__main__":
     httpd = HTTPServer(("0.0.0.0", 5601), SIEMWebHandler)
     print("[SIEM] Web UI listening on port 5601")
     httpd.serve_forever()
+

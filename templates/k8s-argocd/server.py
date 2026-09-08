@@ -88,3 +88,4 @@ if __name__ == "__main__":
     httpd = HTTPServer(("0.0.0.0", 8080), ArgoCDHandler)
     print(f"[K3s-Team{TEAM_ID}] ArgoCD Web running on port 8080")
     httpd.serve_forever()
+

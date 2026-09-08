@@ -76,3 +76,4 @@ if __name__ == "__main__":
     httpd = HTTPServer(("0.0.0.0", 3000), GiteaHandler)
     print(f"[Gitea-Team{TEAM_ID}] Web interface running on port 3000")
     httpd.serve_forever()
+

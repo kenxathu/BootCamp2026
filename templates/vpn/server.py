@@ -79,3 +79,4 @@ if __name__ == "__main__":
     httpd = HTTPServer(("0.0.0.0", 443), VPNWebHandler)
     print(f"[VPN-Team{TEAM_ID}] Web VPN Portal active on port 443")
     httpd.serve_forever()
+

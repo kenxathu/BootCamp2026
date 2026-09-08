@@ -12,3 +12,4 @@ ENV RDP_PORT=3390
 EXPOSE 4482 5986 3390
 
 CMD ["python3", "agent.py"]
+

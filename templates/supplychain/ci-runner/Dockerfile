@@ -5,3 +5,4 @@ WORKDIR /app
 COPY runner.py /app/runner.py
 
 CMD ["python3", "runner.py"]
+

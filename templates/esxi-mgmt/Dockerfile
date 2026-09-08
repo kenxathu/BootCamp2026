@@ -8,3 +8,4 @@ COPY server.py /app/server.py
 EXPOSE 2301 2302 2303 2322 80 443
 
 CMD ["python3", "server.py"]
+

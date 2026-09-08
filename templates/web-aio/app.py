@@ -93,3 +93,4 @@ if __name__ == "__main__":
     server = HTTPServer(("0.0.0.0", port), WebAIOHandler)
     print(f"[Web-AIO-Team{TEAM_ID}] Running on port {port}")
     server.serve_forever()
+

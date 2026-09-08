@@ -83,3 +83,4 @@ if __name__ == "__main__":
     httpd = HTTPServer(("0.0.0.0", 8000), JumpboxHandler)
     print(f"[Jumpbox-Team{TEAM_ID}] Terminal ready on port 8000")
     httpd.serve_forever()
+

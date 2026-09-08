@@ -116,3 +116,4 @@ if __name__ == "__main__":
     server = HTTPServer(("0.0.0.0", port), PfSenseHandler)
     print(f"[{ROUTER_NAME}] pfSense Web Interface running on port {port}")
     server.serve_forever()
+

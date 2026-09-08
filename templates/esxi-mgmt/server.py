@@ -97,3 +97,4 @@ if __name__ == "__main__":
     httpd = HTTPServer(("0.0.0.0", 80), ESXiWebHandler)
     print(f"[ESXi-Team{TEAM_ID}] ESXi Web host client running on port 80")
     httpd.serve_forever()
+

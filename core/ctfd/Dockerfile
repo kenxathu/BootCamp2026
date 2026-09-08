@@ -8,3 +8,4 @@ COPY ../scoring_rules.json /app/scoring_rules.json
 EXPOSE 80 443 8000
 
 CMD ["python3", "app.py"]
+

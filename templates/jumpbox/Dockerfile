@@ -16,3 +16,4 @@ COPY jumpbox.py /app/jumpbox.py
 EXPOSE 7681 8000
 
 CMD ["python3", "jumpbox.py"]
+

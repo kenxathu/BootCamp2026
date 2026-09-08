@@ -7,3 +7,4 @@ COPY app.py /app/app.py
 EXPOSE 80 443 8443
 
 CMD ["python3", "app.py"]
+

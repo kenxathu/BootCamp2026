@@ -7,3 +7,4 @@ COPY server.py /app/server.py
 EXPOSE 3000 2222
 
 CMD ["python3", "server.py"]
+

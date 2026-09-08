@@ -11,3 +11,4 @@ COPY ../scoring_rules.json ./scoring_rules.json
 EXPOSE 8080
 
 CMD ["python3", "checker.py"]
+

@@ -64,3 +64,4 @@ if __name__ == "__main__":
     httpd = HTTPServer(("0.0.0.0", 9153), MetricsHandler)
     print(f"[DNS-OPS-Team{TEAM_ID}] Metrics server listening on port 9153")
     httpd.serve_forever()
+

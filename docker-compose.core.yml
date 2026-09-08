@@ -1,11 +1,12 @@
 services:
   ctfd:
     build:
-      context: .
-      dockerfile: core/ctfd/Dockerfile
+      context: core/ctfd
+      dockerfile: Dockerfile
     container_name: btc-ctfd
     environment:
       - PORT=8000
+      - TOTAL_TEAMS=5
       - SLA_CHECKER_URL=http://sla-checker:8080
     ports:
       - "8000:8000"
@@ -34,7 +35,7 @@ services:
     container_name: btc-sla-checker
     environment:
       - PORT=8080
-      - TOTAL_TEAMS=27
+      - TOTAL_TEAMS=5
       - SLA_MIN_INTERVAL=10
       - SLA_MAX_INTERVAL=30
     ports:
@@ -52,4 +53,3 @@ networks:
       config:
         - subnet: 10.10.0.0/24
           gateway: 10.10.0.1
-

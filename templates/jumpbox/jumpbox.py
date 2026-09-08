@@ -46,8 +46,8 @@ class JumpboxHandler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
-            targets = []
-            for i in range(1, 28):
+            total_teams = int(os.environ.get("TOTAL_TEAMS", "5"))
+            for i in range(1, total_teams + 1):
                 if f"{i:02d}" != TEAM_ID:
                     targets.append({
                         f"team_{i:02d}": {

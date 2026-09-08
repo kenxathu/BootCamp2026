@@ -7,11 +7,13 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 
 SLA_CHECKER_URL = os.environ.get("SLA_CHECKER_URL", "http://sla-checker:8080")
 
+TOTAL_TEAMS = int(os.environ.get("TOTAL_TEAMS", "5"))
+
 # Scoreboard memory store
 teams_scores = {}
 submissions = []
 
-for tid in range(1, 28):
+for tid in range(1, TOTAL_TEAMS + 1):
     tkey = f"team{tid:02d}"
     teams_scores[tkey] = {
         "id": tid,
@@ -182,7 +184,7 @@ class CTFdHandler(BaseHTTPRequestHandler):
         # Build options
         att_opts = ""
         vic_opts = ""
-        for i in range(1, 28):
+        for i in range(1, TOTAL_TEAMS + 1):
             att_opts += f"<option value='{i}'>Team {i:02d}</option>"
             vic_opts += f"<option value='{i}' {'selected' if i == 2 else ''}>Team {i:02d}</option>"
 

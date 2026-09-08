@@ -11,7 +11,7 @@ import uvicorn
 
 app = FastAPI(title="Cyber Range Arena SLA Checker & Scoring Engine")
 
-TOTAL_TEAMS = int(os.environ.get("TOTAL_TEAMS", "27"))
+TOTAL_TEAMS = int(os.environ.get("TOTAL_TEAMS", "5"))
 MIN_INTERVAL = int(os.environ.get("SLA_MIN_INTERVAL", "5")) # default fast for test, 60 in prod
 MAX_INTERVAL = int(os.environ.get("SLA_MAX_INTERVAL", "20")) # default fast for test, 600 in prod
 FAST_MODE = os.environ.get("FAST_MODE", "true").lower() == "true"

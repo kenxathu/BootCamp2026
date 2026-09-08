@@ -88,9 +88,12 @@ def test_template_files():
     print(f"    -> All {len(required_templates)} core template and service files verified!")
 
 def test_team_compose_generation():
-    print("\n[3] Verifying Team Compose topology for all 27 teams...")
+    rule_file = BASE_DIR / "core" / "scoring_rules.json"
+    with open(rule_file, "r", encoding="utf-8") as f:
+        total_teams = json.load(f)["competition"]["total_teams"]
+    print(f"\n[3] Verifying Team Compose topology for all {total_teams} teams...")
     generated_dir = BASE_DIR / "generated"
-    for tid in range(1, 28):
+    for tid in range(1, total_teams + 1):
         cf = generated_dir / f"docker-compose.team{tid:02d}.yml"
         assert cf.exists(), f"Compose file for Team {tid:02d} missing!"
         content = cf.read_text(encoding="utf-8")

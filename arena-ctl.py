@@ -14,6 +14,11 @@ import subprocess
 import argparse
 from pathlib import Path
 
+# Fix Windows console encoding for Unicode/Vietnamese text
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 BASE_DIR = Path(__file__).resolve().parent
 GENERATED_DIR = BASE_DIR / "generated"
 TEMPLATES_DIR = BASE_DIR / "templates"
@@ -84,8 +89,9 @@ def cmd_generate_flags(args):
         ("ws02", "WS02_FinanceUser", 100, "Workstation - WS02")
     ]
 
+    TOTAL_TEAMS = int(os.environ.get("TOTAL_TEAMS", "5"))
     master_flags = {}
-    for tid in range(1, 28):
+    for tid in range(1, TOTAL_TEAMS + 1):
         tkey = f"team{tid:02d}"
         master_flags[tkey] = {
             "team_id": tid,
@@ -104,7 +110,7 @@ def cmd_generate_flags(args):
     with open(flags_file, "w", encoding="utf-8") as f:
         json.dump(master_flags, f, indent=2)
 
-    print(f"[+] Generated flags for 27 teams (270 total flags) -> {flags_file.name}")
+    print(f"[+] Generated flags for {TOTAL_TEAMS} teams ({TOTAL_TEAMS * len(targets)} total flags) -> {flags_file.name}")
 
 def cmd_spawn_teams(args):
     """Spawns configuration files for N teams."""
@@ -115,19 +121,95 @@ def cmd_spawn_teams(args):
         render_team_compose(tid, mode=mode)
     print(f"[+] Successfully generated configs for {count} teams in ./generated/")
 
-def cmd_up_core(args):
-    """Starts the BTC Core infrastructure (CTFd, SIEM, SLA Checker)."""
-    core_compose = BASE_DIR / "docker-compose.core.yml"
-    print("[*] Starting BTC Core Infrastructure (10.10.0.0/24)...")
-    cmd = ["docker", "compose", "-f", str(core_compose), "up", "-d"]
-    subprocess.run(cmd, check=True)
-    print("\n[+] BTC Core online!")
+def check_docker_daemon() -> bool:
+    """Checks if docker engine is running and accessible."""
+    try:
+        res = subprocess.run(["docker", "info"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return res.returncode == 0
+    except (FileNotFoundError, Exception):
+        return False
+
+def get_compose_cmd():
+    """Detects whether to use 'docker compose' or 'docker-compose'."""
+    try:
+        res = subprocess.run(["docker", "compose", "version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if res.returncode == 0:
+            return ["docker", "compose"]
+    except Exception:
+        pass
+    try:
+        res = subprocess.run(["docker-compose", "version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if res.returncode == 0:
+            return ["docker-compose"]
+    except Exception:
+        pass
+    return ["docker", "compose"]
+
+def start_native_core():
+    """Runs CTFd, SIEM, and SLA Checker as background Python processes."""
+    ctfd_script = CORE_DIR / "ctfd" / "app.py"
+    siem_script = CORE_DIR / "siem" / "collector.py"
+    sla_script = CORE_DIR / "sla-checker" / "checker.py"
+
+    env_ctfd = os.environ.copy()
+    env_ctfd["PORT"] = "8000"
+    env_ctfd["TOTAL_TEAMS"] = "5"
+    env_ctfd["SLA_CHECKER_URL"] = "http://127.0.0.1:8081"
+
+    env_sla = os.environ.copy()
+    env_sla["PORT"] = "8081"
+    env_sla["TOTAL_TEAMS"] = "5"
+
+    env_siem = os.environ.copy()
+
+    p_ctfd = subprocess.Popen([sys.executable, str(ctfd_script)], env=env_ctfd)
+    p_siem = subprocess.Popen([sys.executable, str(siem_script)], env=env_siem)
+    p_sla = subprocess.Popen([sys.executable, str(sla_script)], env=env_sla)
+
+    pids_file = BASE_DIR / ".native_core.pids"
+    with open(pids_file, "w") as f:
+        json.dump({"ctfd": p_ctfd.pid, "siem": p_siem.pid, "sla": p_sla.pid}, f)
+
+    print("\n[+] BTC Core online (Native Mode)!")
     print("    - CTFd Scoreboard:    http://localhost:8000")
     print("    - SIEM Dashboard:     http://localhost:5601")
     print("    - SLA Live Matrix:    http://localhost:8081")
+    print("\n    Chạy 'python arena-ctl.py down-all' để dừng toàn bộ dịch vụ.")
+
+def cmd_up_core(args):
+    """Starts the BTC Core infrastructure (CTFd, SIEM, SLA Checker)."""
+    if getattr(args, "native", False):
+        print("[*] Starting BTC Core natively in background processes (Dev/Test mode)...")
+        start_native_core()
+        return
+
+    if not check_docker_daemon():
+        print("[-] Lỗi: Docker Daemon chưa chạy (Docker Engine is not running)!")
+        print("    👉 Trên Windows: Vui lòng mở ứng dụng 'Docker Desktop' và chờ biểu tượng cá voi chuyển sang màu xanh.")
+        print("    👉 Trên Linux: Chạy lệnh 'sudo systemctl start docker' hoặc 'sudo service docker start'.")
+        print("\n    💡 Mẹo: Bạn có thể khởi chạy ngay BTC Core không cần Docker daemon (Local Native Mode) bằng lệnh:")
+        print("       python arena-ctl.py up-core --native")
+        sys.exit(1)
+
+    core_compose = BASE_DIR / "docker-compose.core.yml"
+    print("[*] Starting BTC Core Infrastructure (10.10.0.0/24)...")
+    compose_cmd = get_compose_cmd() + ["-f", str(core_compose), "up", "-d", "--build"]
+    try:
+        subprocess.run(compose_cmd, check=True)
+        print("\n[+] BTC Core online!")
+        print("    - CTFd Scoreboard:    http://localhost:8000")
+        print("    - SIEM Dashboard:     http://localhost:5601")
+        print("    - SLA Live Matrix:    http://localhost:8081")
+    except subprocess.CalledProcessError as e:
+        print(f"[-] Docker compose execution failed with exit code {e.returncode}.")
+        sys.exit(1)
 
 def cmd_up_team(args):
     """Starts a specific team environment."""
+    if not check_docker_daemon():
+        print("[-] Lỗi: Docker Daemon chưa chạy! Vui lòng khởi động Docker trước khi start đội thi.")
+        sys.exit(1)
+
     tid = args.id
     tid_str = f"{tid:02d}"
     compose_path = GENERATED_DIR / f"docker-compose.team{tid_str}.yml"
@@ -135,23 +217,50 @@ def cmd_up_team(args):
         compose_path = render_team_compose(tid)
 
     print(f"[*] Starting Team {tid_str} environment...")
-    cmd = ["docker", "compose", "-f", str(compose_path), "up", "-d"]
-    subprocess.run(cmd, check=True)
-    print(f"[+] Team {tid_str} is UP!")
+    compose_cmd = get_compose_cmd() + ["-f", str(compose_path), "up", "-d", "--build"]
+    try:
+        subprocess.run(compose_cmd, check=True)
+        print(f"[+] Team {tid_str} is UP!")
+    except subprocess.CalledProcessError as e:
+        print(f"[-] Starting Team {tid_str} failed with exit code {e.returncode}.")
+        sys.exit(1)
 
 def cmd_down_all(args):
     """Stops all running containers and cleans up."""
     print("[*] Stopping all Cyber Range components...")
-    # Stop all generated team composes
-    for compose_file in GENERATED_DIR.glob("docker-compose.team*.yml"):
-        print(f"[*] Stopping {compose_file.name}...")
-        subprocess.run(["docker", "compose", "-f", str(compose_file), "down"], check=False)
+    
+    # Stop native core processes if running
+    pids_file = BASE_DIR / ".native_core.pids"
+    if pids_file.exists():
+        try:
+            with open(pids_file, "r") as f:
+                pids = json.load(f)
+            import signal
+            for name, pid in pids.items():
+                try:
+                    if sys.platform == "win32":
+                        subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    else:
+                        os.kill(pid, signal.SIGTERM)
+                    print(f"[+] Stopped native {name} (PID: {pid})")
+                except Exception:
+                    pass
+            pids_file.unlink(missing_ok=True)
+        except Exception:
+            pass
 
-    # Stop core
-    core_compose = BASE_DIR / "docker-compose.core.yml"
-    if core_compose.exists():
-        print("[*] Stopping BTC Core...")
-        subprocess.run(["docker", "compose", "-f", str(core_compose), "down"], check=False)
+    if check_docker_daemon():
+        compose_bin = get_compose_cmd()
+        # Stop all generated team composes
+        for compose_file in GENERATED_DIR.glob("docker-compose.team*.yml"):
+            print(f"[*] Stopping {compose_file.name}...")
+            subprocess.run(compose_bin + ["-f", str(compose_file), "down"], check=False)
+
+        # Stop core
+        core_compose = BASE_DIR / "docker-compose.core.yml"
+        if core_compose.exists():
+            print("[*] Stopping BTC Core...")
+            subprocess.run(compose_bin + ["-f", str(core_compose), "down"], check=False)
     print("[+] Arena environment stopped.")
 
 def cmd_sla_status(args):
@@ -199,7 +308,7 @@ def main():
 
     # spawn-teams
     p_spawn = subparsers.add_parser("spawn-teams", help="Generate Docker Compose files for teams")
-    p_spawn.add_argument("--count", type=int, default=27, help="Number of teams (1-27)")
+    p_spawn.add_argument("--count", type=int, default=5, help="Number of teams (default 5)")
     p_spawn.add_argument("--mode", choices=["exact", "multi"], default="exact", help="IP allocation mode")
     p_spawn.set_defaults(func=cmd_spawn_teams)
 
@@ -209,11 +318,12 @@ def main():
 
     # up-core
     p_up_core = subparsers.add_parser("up-core", help="Start BTC Core (CTFd, SIEM, SLA Checker)")
+    p_up_core.add_argument("--native", action="store_true", help="Run BTC Core as native Python services without Docker")
     p_up_core.set_defaults(func=cmd_up_core)
 
     # up-team
     p_up_team = subparsers.add_parser("up-team", help="Start a specific team stack")
-    p_up_team.add_argument("--id", type=int, required=True, help="Team ID (1-27)")
+    p_up_team.add_argument("--id", type=int, required=True, help="Team ID (e.g. 1-5)")
     p_up_team.set_defaults(func=cmd_up_team)
 
     # down-all

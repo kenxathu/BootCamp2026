@@ -26,8 +26,11 @@ python arena-ctl.py generate-flags
 
 ### Bước 3: Sinh File Cấu Hình Cho Toàn Bộ 27 Đội
 ```bash
-# Sinh cấu hình cho toàn bộ 27 đội theo đúng sơ đồ mạng
-python arena-ctl.py spawn-teams --count 27 --mode exact
+# Khuyến nghị: Dùng chế độ 'multi' (mặc định) khi chạy nhiều đội đồng thời trên cùng Docker host
+# Chế độ này tự động phân tách dải IP 172.(20+ID).X cho từng đội, tránh xung đột mạng (Address already in use)
+python arena-ctl.py spawn-teams --count 27 --mode multi
+
+# (Lưu ý: Chỉ dùng --mode exact khi chạy duy nhất 1 đội trên 1 máy chủ vật lý riêng biệt)
 ```
 
 ### Bước 4: Khởi Động Hạ Tầng BTC (10.10.0.0/24)

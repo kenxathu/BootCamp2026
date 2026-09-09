@@ -255,33 +255,33 @@ networks:
       driver: default
       config:
         - subnet: 172.46.20.0/24
-          gateway: 172.46.20.1
+          gateway: 172.46.20.254
   team_vlan201:
     name: arena_team26_vlan201
     ipam:
       driver: default
       config:
         - subnet: 172.46.201.0/24
-          gateway: 172.46.201.1
+          gateway: 172.46.201.254
   team_vlan202:
     name: arena_team26_vlan202
     ipam:
       driver: default
       config:
         - subnet: 172.46.202.0/24
-          gateway: 172.46.202.1
+          gateway: 172.46.202.254
   team_vlan203:
     name: arena_team26_vlan203
     ipam:
       driver: default
       config:
         - subnet: 172.46.203.0/24
-          gateway: 172.46.203.1
+          gateway: 172.46.203.254
   team_vlan204:
     name: arena_team26_vlan204
     ipam:
       driver: default
       config:
         - subnet: 172.46.204.0/24
-          gateway: 172.46.204.1
+          gateway: 172.46.204.254
 

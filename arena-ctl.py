@@ -23,6 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent
 GENERATED_DIR = BASE_DIR / "generated"
 TEMPLATES_DIR = BASE_DIR / "templates"
 CORE_DIR = BASE_DIR / "core"
+CREDENTIALS_FILE = GENERATED_DIR / "team_credentials.json"
 
 SECRET_KEY = os.environ.get("ARENA_SECRET_KEY", "CyberRange2026_SecretKey_TopSecret")
 
@@ -35,7 +36,53 @@ def generate_flag(team_id: int, target: str) -> str:
     sig = hashlib.sha256(raw).hexdigest()[:12]
     return f"FLAG{{{target}_Team{team_id:02d}_{sig}}}"
 
-def render_team_compose(team_id: int, mode: str = "multi") -> Path:
+def generate_pfsense_password(team_id: int) -> str:
+    """Generates a cryptographically derived admin password for pfSense for a team."""
+    raw = f"pfsense:admin:team:{team_id}:{SECRET_KEY}".encode("utf-8")
+    sig = hashlib.sha256(raw).hexdigest()[:8]
+    return f"pfSense@Team{team_id:02d}#{sig}"
+
+def load_all_credentials() -> dict:
+    ensure_dirs()
+    if CREDENTIALS_FILE.exists():
+        try:
+            with open(CREDENTIALS_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+    return {}
+
+def save_all_credentials(creds: dict):
+    ensure_dirs()
+    with open(CREDENTIALS_FILE, "w", encoding="utf-8") as f:
+        json.dump(creds, f, indent=2)
+
+def get_or_set_team_pfsense_password(team_id: int, custom_password: str = None) -> str:
+    creds = load_all_credentials()
+    tkey = f"team{team_id:02d}"
+    if tkey not in creds:
+        creds[tkey] = {
+            "team_id": team_id,
+            "wan_ip": f"10.10.1{team_id:02d}.2",
+            "pfsense": {}
+        }
+    
+    if custom_password:
+        pwd = custom_password
+    elif "pfsense" in creds[tkey] and "password" in creds[tkey]["pfsense"] and creds[tkey]["pfsense"]["password"]:
+        pwd = creds[tkey]["pfsense"]["password"]
+    else:
+        pwd = generate_pfsense_password(team_id)
+
+    creds[tkey]["pfsense"] = {
+        "url": f"http://10.10.1{team_id:02d}.2:80",
+        "username": "admin",
+        "password": pwd
+    }
+    save_all_credentials(creds)
+    return pwd
+
+def render_team_compose(team_id: int, mode: str = "multi", pfsense_password: str = None) -> Path:
     """Renders the docker-compose file for a given team."""
     ensure_dirs()
     template_file = TEMPLATES_DIR / "team-compose.template.yml"
@@ -61,12 +108,16 @@ def render_team_compose(team_id: int, mode: str = "multi") -> Path:
         vlan203 = f"172.{vlan_base}.203"
         vlan204 = f"172.{vlan_base}.204"
 
+    # Get pfSense password
+    pwd = get_or_set_team_pfsense_password(team_id, custom_password=pfsense_password)
+
     rendered = content.replace("{{ team_id }}", tid_str)
     rendered = rendered.replace("{{ vlan20_prefix }}", vlan20)
     rendered = rendered.replace("{{ vlan201_prefix }}", vlan201)
     rendered = rendered.replace("{{ vlan202_prefix }}", vlan202)
     rendered = rendered.replace("{{ vlan203_prefix }}", vlan203)
     rendered = rendered.replace("{{ vlan204_prefix }}", vlan204)
+    rendered = rendered.replace("{{ pfsense_admin_password }}", pwd)
 
     out_file = GENERATED_DIR / f"docker-compose.team{tid_str}.yml"
     with open(out_file, "w", encoding="utf-8") as f:
@@ -115,13 +166,14 @@ def cmd_generate_flags(args):
     print(f"[+] Generated flags for {TOTAL_TEAMS} teams ({TOTAL_TEAMS * len(targets)} total flags) -> {flags_file.name}")
 
 def cmd_spawn_teams(args):
-    """Spawns configuration files for N teams."""
+    """Spawns configuration files and pfSense credentials for N teams."""
     count = args.count
     mode = args.mode
-    print(f"[*] Generating environments for {count} teams in '{mode}' mode...")
+    print(f"[*] Generating environments and pfSense admin credentials for {count} teams in '{mode}' mode...")
     for tid in range(1, count + 1):
         render_team_compose(tid, mode=mode)
     print(f"[+] Successfully generated configs for {count} teams in ./generated/")
+    print(f"[+] Team credentials saved to {CREDENTIALS_FILE.name}")
 
 def check_docker_daemon() -> bool:
     """Checks if docker engine is running and accessible."""
@@ -207,25 +259,64 @@ def cmd_up_core(args):
         sys.exit(1)
 
 def cmd_up_team(args):
-    """Starts a specific team environment."""
+    """Starts a specific team environment and displays credentials."""
+    tid = args.id
+    tid_str = f"{tid:02d}"
+    custom_pwd = getattr(args, "password", None)
+    
+    compose_path = GENERATED_DIR / f"docker-compose.team{tid_str}.yml"
+    if custom_pwd or not compose_path.exists():
+        compose_path = render_team_compose(tid, pfsense_password=custom_pwd)
+    
+    pwd = get_or_set_team_pfsense_password(tid, custom_password=custom_pwd)
+
+    print(f"\n{'='*65}")
+    print(f"[*] KHỞI CHẠY ĐỘI THI: TEAM {tid_str}")
+    print(f"{'='*65}")
+    print(f"🛡️  THÔNG TIN QUẢN TRỊ PFSENSE ROUTER (TEAM {tid_str}):")
+    print(f"    - WebGUI Dashboard : http://10.10.1{tid_str}.2:80")
+    print(f"    - Tên đăng nhập    : admin")
+    print(f"    - Mật khẩu quản trị: {pwd}")
+    print(f"    - Cờ Appliance     : {generate_flag(tid, 'pfSense_Appliance')}")
+    print(f"{'='*65}\n")
+
     if not check_docker_daemon():
         print("[-] Lỗi: Docker Daemon chưa chạy! Vui lòng khởi động Docker trước khi start đội thi.")
         sys.exit(1)
 
-    tid = args.id
-    tid_str = f"{tid:02d}"
-    compose_path = GENERATED_DIR / f"docker-compose.team{tid_str}.yml"
-    if not compose_path.exists():
-        compose_path = render_team_compose(tid)
-
-    print(f"[*] Starting Team {tid_str} environment...")
     compose_cmd = get_compose_cmd() + ["-f", str(compose_path), "up", "-d", "--build"]
     try:
         subprocess.run(compose_cmd, check=True)
         print(f"[+] Team {tid_str} is UP!")
+        print(f"[+] pfSense Dashboard online tại http://10.10.1{tid_str}.2 (User: admin / Pass: {pwd})")
     except subprocess.CalledProcessError as e:
         print(f"[-] Starting Team {tid_str} failed with exit code {e.returncode}.")
         sys.exit(1)
+
+def cmd_show_credentials(args):
+    """Displays stored credentials for teams."""
+    creds = load_all_credentials()
+    if not creds:
+        print("[-] Chưa có thông tin credentials. Chạy 'spawn-teams' hoặc 'up-team' trước.")
+        return
+
+    tid = getattr(args, "id", None)
+    print("\n" + "="*68)
+    print(" 🛡️  ARENA CYBER RANGE - DANH SÁCH TÀI KHOẢN QUẢN TRỊ ĐỘI THI")
+    print("="*68)
+
+    keys = [f"team{tid:02d}"] if tid else sorted(creds.keys())
+    for tkey in keys:
+        if tkey not in creds:
+            print(f"[-] Không tìm thấy thông tin cho {tkey}.")
+            continue
+        c = creds[tkey]
+        pfs = c.get("pfsense", {})
+        print(f"\n[TEAM {c.get('team_id', 0):02d}] - IP WAN: {c.get('wan_ip')}")
+        print(f"  • pfSense WebGUI : {pfs.get('url', 'N/A')}")
+        print(f"  • Tài khoản      : {pfs.get('username', 'admin')}")
+        print(f"  • Mật khẩu       : {pfs.get('password', 'N/A')}")
+    print("\n" + "="*68)
 
 def cmd_down_all(args):
     """Stops all running containers and cleans up."""
@@ -326,7 +417,13 @@ def main():
     # up-team
     p_up_team = subparsers.add_parser("up-team", help="Start a specific team stack")
     p_up_team.add_argument("--id", type=int, required=True, help="Team ID (e.g. 1-5)")
+    p_up_team.add_argument("--password", "--pfsense-password", dest="password", default=None, help="Custom pfSense admin password for this team")
     p_up_team.set_defaults(func=cmd_up_team)
+
+    # credentials
+    p_creds = subparsers.add_parser("credentials", help="View admin credentials for teams")
+    p_creds.add_argument("--id", type=int, default=None, help="Team ID (optional, defaults to all teams)")
+    p_creds.set_defaults(func=cmd_show_credentials)
 
     # down-all
     p_down = subparsers.add_parser("down-all", help="Stop all arena containers")

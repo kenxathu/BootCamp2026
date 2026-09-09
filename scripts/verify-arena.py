@@ -124,7 +124,13 @@ def test_team_compose_generation():
 
         assert ".204.100" in content, "AdminPrivate Jumpbox IP missing"
 
-    print(f"    -> All 27 team environments correctly map all 5 VLANs and all 13 containers!")
+        # Check pfSense admin credentials
+        assert "PFSENSE_ADMIN_USER=admin" in content, f"Team {tid} PFSENSE_ADMIN_USER missing"
+        assert "PFSENSE_ADMIN_PASSWORD=" in content, f"Team {tid} PFSENSE_ADMIN_PASSWORD missing"
+
+    creds_file = generated_dir / "team_credentials.json"
+    assert creds_file.exists(), "team_credentials.json missing!"
+    print(f"    -> All {total_teams} team environments correctly map all 5 VLANs, 13 containers, and pfSense admin credentials!")
 
 def main():
     print("=== STARTING ARENA SPECIFICATION VERIFICATION ===")

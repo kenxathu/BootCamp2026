@@ -39,15 +39,29 @@ python arena-ctl.py up-core
   * **Bảng Giám Sát SLA Thời Gian Thực:** [http://localhost:8081](http://localhost:8081)
   * **Hệ Thống SIEM & Thu Log Syslog:** [http://localhost:5601](http://localhost:5601)
 
-### Bước 5: Khởi Động Môi Trường Của Đội Thi
-* Khởi động một đội cụ thể (ví dụ Đội 01):
+### Bước 5: Khởi Động Môi Trường Của Đội Thi & Cài Đặt Mật Khẩu pfSense
+* **Khởi động một đội với mật khẩu tự động:**
   ```bash
+  # Tự động sinh mật khẩu bảo mật (ví dụ: pfSense@Team01#3ae5bb76) và hiển thị ra màn hình
   python arena-ctl.py up-team --id 1
   ```
-* Khởi động Đội 02:
+* **Khởi động kèm mật khẩu quản trị pfSense tùy chỉnh:**
   ```bash
-  python arena-ctl.py up-team --id 2
+  python arena-ctl.py up-team --id 1 --password "MatKhauQuanTri@2026!"
   ```
+* **Tra cứu thông tin tài khoản pfSense bất kỳ lúc nào:**
+  ```bash
+  # Xem toàn bộ danh sách 27 đội
+  python arena-ctl.py credentials
+
+  # Hoặc xem riêng một đội cụ thể
+  python arena-ctl.py credentials --id 1
+  ```
+* **Đăng nhập pfSense WebGUI:**
+  - Truy cập địa chỉ `http://10.10.1XX.2:80` (hoặc qua Jumpbox VLAN 204).
+  - Tên người dùng: `admin`
+  - Mật khẩu: Mật khẩu hiển thị khi chạy `up-team` hoặc lưu trong `generated/team_credentials.json`.
+  - Hỗ trợ cả đăng nhập giao diện web (Session Cookie) và HTTP Basic Auth.
 
 ---
 

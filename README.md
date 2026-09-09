@@ -40,10 +40,16 @@ python arena-ctl.py spawn-teams --count 27
 # 3. Khởi chạy hạ tầng BTC (CTFd, SIEM, SLA Engine)
 python arena-ctl.py up-core
 
-# 4. Khởi chạy đội thi (ví dụ Đội 01)
+# 4. Khởi chạy đội thi (ví dụ Đội 01 với mật khẩu quản trị pfSense)
 python arena-ctl.py up-team --id 1
+# Hoặc truyền mật khẩu tùy chọn:
+# python arena-ctl.py up-team --id 1 --password "SecretPass123!"
+
+# 5. Tra cứu danh sách mật khẩu quản trị pfSense các đội:
+python arena-ctl.py credentials --id 1
 ```
 
+* **pfSense WebGUI:** `http://10.10.1XX.2:80` (User: `admin`, Password tự sinh hoặc cấu hình)
 * **CTFd Scoreboard:** [http://localhost:8000](http://localhost:8000)
 * **SLA Live Dashboard:** [http://localhost:8081](http://localhost:8081)
 * **SIEM Syslog Console:** [http://localhost:5601](http://localhost:5601)

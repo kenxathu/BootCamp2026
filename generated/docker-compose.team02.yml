@@ -11,6 +11,8 @@ services:
     environment:
       - TEAM_ID=02
       - PORT=80
+      - PFSENSE_ADMIN_USER=admin
+      - PFSENSE_ADMIN_PASSWORD=pfSense@Team02#bc278a76
     networks:
       team_wan:
         ipv4_address: 10.10.102.2

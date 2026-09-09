@@ -11,6 +11,8 @@ services:
     environment:
       - TEAM_ID={{ team_id }}
       - PORT=80
+      - PFSENSE_ADMIN_USER=admin
+      - PFSENSE_ADMIN_PASSWORD={{ pfsense_admin_password }}
     networks:
       team_wan:
         ipv4_address: 10.10.1{{ team_id }}.2

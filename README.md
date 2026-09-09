@@ -49,7 +49,8 @@ python arena-ctl.py up-team --id 1
 python arena-ctl.py credentials --id 1
 ```
 
-* **pfSense WebGUI:** `http://10.10.1XX.2:80` (User: `admin`, Password tự sinh hoặc cấu hình)
+* **pfSense WebGUI (Localhost):** `http://localhost:81XX` (ví dụ: `http://localhost:8101` cho Đội 01, `http://localhost:8102` cho Đội 02)
+* **Jumpbox Terminal (Localhost):** `http://localhost:82XX` (ví dụ: `http://localhost:8201` cho Đội 01, `http://localhost:8202` cho Đội 02)
 * **CTFd Scoreboard:** [http://localhost:8000](http://localhost:8000)
 * **SLA Live Dashboard:** [http://localhost:8081](http://localhost:8081)
 * **SIEM Syslog Console:** [http://localhost:5601](http://localhost:5601)

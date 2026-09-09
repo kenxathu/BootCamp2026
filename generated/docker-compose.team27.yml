@@ -13,6 +13,8 @@ services:
       - PORT=80
       - PFSENSE_ADMIN_USER=admin
       - PFSENSE_ADMIN_PASSWORD=pfSense@Team27#2f40144c
+    ports:
+      - "8127:80"
     networks:
       team_wan:
         ipv4_address: 10.10.127.2
@@ -236,6 +238,8 @@ services:
     hostname: jumpbox.team27.arena.local
     environment:
       - TEAM_ID=27
+    ports:
+      - "8227:80"
     networks:
       team_vlan204:
         ipv4_address: 172.47.204.100

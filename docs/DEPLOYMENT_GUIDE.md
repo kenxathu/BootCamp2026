@@ -61,10 +61,13 @@ python arena-ctl.py up-core
   python arena-ctl.py credentials --id 1
   ```
 * **Đăng nhập pfSense WebGUI:**
-  - Truy cập địa chỉ `http://10.10.1XX.2:80` (hoặc qua Jumpbox VLAN 204).
-  - Tên người dùng: `admin`
-  - Mật khẩu: Mật khẩu hiển thị khi chạy `up-team` hoặc lưu trong `generated/team_credentials.json`.
+  - **Từ máy Host (Localhost):** Truy cập `http://localhost:81XX` (ví dụ Đội 01: `http://localhost:8101`, Đội 02: `http://localhost:8102`).
+  - **Từ mạng nội bộ Docker:** `http://10.10.1XX.2:80`.
+  - **Tên người dùng:** `admin`
+  - **Mật khẩu:** Mật khẩu hiển thị khi chạy `up-team` hoặc tra cứu bằng `python arena-ctl.py credentials --id XX`.
   - Hỗ trợ cả đăng nhập giao diện web (Session Cookie) và HTTP Basic Auth.
+* **Truy cập Jumpbox Red/Blue Console:**
+  - Truy cập `http://localhost:82XX` (ví dụ Đội 01: `http://localhost:8201`, Đội 02: `http://localhost:8202`).
 
 ---
 

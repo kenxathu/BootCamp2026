@@ -75,7 +75,8 @@ def get_or_set_team_pfsense_password(team_id: int, custom_password: str = None) 
         pwd = generate_pfsense_password(team_id)
 
     creds[tkey]["pfsense"] = {
-        "url": f"http://10.10.1{team_id:02d}.2:80",
+        "url": f"http://localhost:81{team_id:02d}",
+        "internal_ip": f"http://10.10.1{team_id:02d}.2:80",
         "username": "admin",
         "password": pwd
     }
@@ -270,14 +271,19 @@ def cmd_up_team(args):
     
     pwd = get_or_set_team_pfsense_password(tid, custom_password=custom_pwd)
 
+    port_host = f"81{tid:02d}"
+    jumpbox_port = f"82{tid:02d}"
+
     print(f"\n{'='*65}")
     print(f"[*] KHỞI CHẠY ĐỘI THI: TEAM {tid_str}")
     print(f"{'='*65}")
     print(f"🛡️  THÔNG TIN QUẢN TRỊ PFSENSE ROUTER (TEAM {tid_str}):")
-    print(f"    - WebGUI Dashboard : http://10.10.1{tid_str}.2:80")
-    print(f"    - Tên đăng nhập    : admin")
-    print(f"    - Mật khẩu quản trị: {pwd}")
-    print(f"    - Cờ Appliance     : {generate_flag(tid, 'pfSense_Appliance')}")
+    print(f"    - WebGUI (Localhost): http://localhost:{port_host}")
+    print(f"    - IP Nội Bộ Docker  : http://10.10.1{tid_str}.2:80")
+    print(f"    - Jumpbox Console   : http://localhost:{jumpbox_port}")
+    print(f"    - Tên đăng nhập     : admin")
+    print(f"    - Mật khẩu quản trị : {pwd}")
+    print(f"    - Cờ Appliance      : {generate_flag(tid, 'pfSense_Appliance')}")
     print(f"{'='*65}\n")
 
     if not check_docker_daemon():
@@ -288,7 +294,8 @@ def cmd_up_team(args):
     try:
         subprocess.run(compose_cmd, check=True)
         print(f"[+] Team {tid_str} is UP!")
-        print(f"[+] pfSense Dashboard online tại http://10.10.1{tid_str}.2 (User: admin / Pass: {pwd})")
+        print(f"[+] pfSense WebGUI online tại http://localhost:{port_host} (User: admin / Pass: {pwd})")
+        print(f"[+] Jumpbox Terminal online tại http://localhost:{jumpbox_port}")
     except subprocess.CalledProcessError as e:
         print(f"[-] Starting Team {tid_str} failed with exit code {e.returncode}.")
         sys.exit(1)
@@ -313,9 +320,10 @@ def cmd_show_credentials(args):
         c = creds[tkey]
         pfs = c.get("pfsense", {})
         print(f"\n[TEAM {c.get('team_id', 0):02d}] - IP WAN: {c.get('wan_ip')}")
-        print(f"  • pfSense WebGUI : {pfs.get('url', 'N/A')}")
-        print(f"  • Tài khoản      : {pfs.get('username', 'admin')}")
-        print(f"  • Mật khẩu       : {pfs.get('password', 'N/A')}")
+        print(f"  • WebGUI (Localhost) : {pfs.get('url', 'N/A')}")
+        print(f"  • IP Nội Bộ Docker   : {pfs.get('internal_ip', 'N/A')}")
+        print(f"  • Tài khoản          : {pfs.get('username', 'admin')}")
+        print(f"  • Mật khẩu           : {pfs.get('password', 'N/A')}")
     print("\n" + "="*68)
 
 def cmd_down_all(args):
